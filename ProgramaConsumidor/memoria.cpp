@@ -33,7 +33,6 @@ void deleta_segmento_de_memoria(int * id_memoria)
 void desanexa_segmento_de_memoria(void **memoria_compartilhada)
 {
    if (shmdt(*memoria_compartilhada) == -1) {
-
        fprintf(stderr, "ERRO: Problema ao remover referencia da memoria compartilhada\n");
    }
 }

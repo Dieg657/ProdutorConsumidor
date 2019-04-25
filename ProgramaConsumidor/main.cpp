@@ -9,8 +9,14 @@
 #include "sinaleiro.h"
 #include "sinaleiro.cpp"
 
-static int produz;
-static int consome;
+#define PROD 1
+#define CONS 2
+
+#define PRODUTOR 1234
+#define CONSUMIDOR 1234
+
+int produtor;
+int consumidor;
 
 int main()
 {
@@ -18,8 +24,18 @@ int main()
    struct memoria *aux;
    int id_memoria;
 
-   produz = semget((key_t)6667, 1, 0666 | IPC_CREAT);
-   consome = semget((key_t)6668, 1, 0666 | IPC_CREAT);
+   constroi(PROD, produtor);
+   produtor = semget((key_t)PRODUTOR, 1, IPC_CREAT | 0666);
+
+   if(produtor < 0){
+       fprintf(stderr, "ERRO: Falha ao obter o identificador de memória do semaforo!");
+       //printf("Entrou aqui: %d\n", __LINE__);
+   }
+   constroi(CONS, consumidor);
+   consumidor = semget((key_t)CONSUMIDOR, 1, IPC_CREAT | 0666);
+   if(consumidor == -1){
+       fprintf(stderr, "ERRO: Falha ao obter o identificador de memória do semaforo!"); return -1;
+   }
 
    cria_segmento_de_memoria(&id_memoria);
    anexa_segmento_de_memoria(&id_memoria, &memoria_compartilhada);
@@ -30,19 +46,23 @@ int main()
 
    for(;;)
    {
+       bloqueia(consumidor);
        if(aux->tamanho!=0)
        {
            aux->conteudo[aux->c]=' ';
            aux->tamanho--;
            aux->c++;
            if(aux->c==aux->max)aux->c=0;
-           printf("%s\n",aux->conteudo);
+              printf("%s\n",aux->conteudo);
        }
        sleep(1);
-
+       libera(produtor);
    }
 
    desanexa_segmento_de_memoria(&memoria_compartilhada);
    deleta_segmento_de_memoria(&id_memoria);
+   destroi(PROD, produtor);
+   destroi(CONS, consumidor);
+
    return 0;
 }
